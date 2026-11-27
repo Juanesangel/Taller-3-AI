@@ -85,8 +85,13 @@ def revise(csp, x, y, domains):
       entre ese par de tareas, respetando la dirección de las precedencias.
     - Si elimina elementos mientras recorre una lista, itere sobre una copia.
     """
-    # TODO: Add your code here
-    raise NotImplementedError
+    cambiado = False
+    for vx in list(domains[x]):
+        if not any(csp.compatible(x, vx, y, vy) for vy in domains[y]):
+            domains[x].remove(vx) 
+            cambiado = True
+    return cambiado
+    
     # FIN DEL BLOQUE DEL ESTUDIANTE
 
 
@@ -100,8 +105,16 @@ def ac3(csp, domains):
       csp.neighbors[x] contiene los vecinos de x.
     - revise(csp, x, y, domains) retorna si modificó domains[x].
     """
-    # TODO: Add your code here
-    raise NotImplementedError
+    queue = [(x, y) for x in csp.variables for y in csp.neighbors[x]]
+    while queue:
+        x, y = queue.pop(0)
+        if revise(csp, x, y, domains):
+            if not domains[x]:
+                return False
+            for z in csp.neighbors[x]:
+                if z != y:
+                    queue.append((z, x))
+    return True
     # FIN DEL BLOQUE DEL ESTUDIANTE
 
 
