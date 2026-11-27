@@ -34,7 +34,7 @@ def backtracking_search(csp, domains=None, select_variable=None,
     def ordered(problem, variable, assignment, current_domains):
         values = ordering(problem, variable, assignment, current_domains)
         trace.record('select', f'Elegir {variable}. Orden de valores: {values}.',
-                     assignment, snapshot(assignment) if trace.enabled else domains, variable)
+                    assignment, snapshot(assignment) if trace.enabled else domains, variable)
         return values
 
     def consistent(variable, value, assignment):
@@ -44,10 +44,10 @@ def backtracking_search(csp, domains=None, select_variable=None,
         if valid and trace.enabled:
             child = {**assignment, variable: value}
             trace.record('assign', f'Asignar {variable} a la franja {value}.',
-                         child, snapshot(child), variable, value)
+                        child, snapshot(child), variable, value)
         elif not valid:
             trace.record('reject', 'El valor entra en conflicto con una tarea asignada.',
-                         assignment, current, variable, value)
+                        assignment, current, variable, value)
         return valid
 
     def search(assignment):
@@ -59,11 +59,18 @@ def backtracking_search(csp, domains=None, select_variable=None,
                 parent = {x: v for x, v in assignment.items() if x != variable}
                 trace.restore(parent, snapshot(parent), variable)
         return result
-
-    # TODO: Add your code here
-    raise NotImplementedError
-    # FIN DEL BLOQUE DEL ESTUDIANTE
-
+      
+  #Punto 1(b)
+    def expand(assignment):
+        if len(assignment) == len(csp.variables):
+            return dict(assignment)
+        x = choose(csp, assignment, domains)
+        for value in ordered(csp, x, assignment, domains):
+            if consistent(x, value, assignment):
+                result = search({**assignment, x: value})
+                if result is not None:
+                    return result
+        return None
     return search({})
 
 
@@ -107,9 +114,17 @@ def select_unassigned_variable(csp, assignment, domains):
     - csp.neighbors[x] contiene sus vecinos; csp.variables conserva el orden
       original para los desempates.
     """
-    # TODO: Add your code here
-    raise NotImplementedError
-    # FIN DEL BLOQUE DEL ESTUDIANTE
+    #Punto 3(a)
+    best, best_key = None, None
+    for x in csp.variables:
+        if x in assignment:
+            continue
+        legal = [v for v in domains[x] if csp.consistent(x, v, assignment)]
+        degree = sum(1 for n in csp.neighbors[x] if n not in assignment)
+        key = (len(legal), -degree)  # menor MRV, mayor grado
+        if best is None or key < best_key:  # estricto: empate conserva el orden original
+            best, best_key = x, key
+    return best
 
 
 def order_domain_values(csp, variable, assignment, domains):
@@ -125,6 +140,19 @@ def order_domain_values(csp, variable, assignment, domains):
     - csp.compatible(variable, valor, vecino, valor_vecino) comprueba cada par
       sin modificar los dominios.
     """
-    # TODO: Add your code here
-    raise NotImplementedError
-    # FIN DEL BLOQUE DEL ESTUDIANTE
+    #Punto 3(b)
+    candidates = [v for v in domains[variable]
+                  if csp.consistent(variable, v, assignment)]
+    pending = [n for n in csp.neighbors[variable] if n not in assignment]
+
+    def ruled_out(value):
+        count = 0
+        for n in pending:
+            for nv in domains[n]:
+                if csp.consistent(n, nv, assignment) and \
+                  not csp.compatible(variable, value, n, nv):
+                    count += 1
+        return count
+
+    # sorted es estable: los empates conservan el orden original
+    return sorted(candidates, key=ruled_out)
